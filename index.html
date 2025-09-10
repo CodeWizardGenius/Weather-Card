@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hava Durumu Kartı</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { color-scheme: dark; }
+    html, body { height: 100%; }
+  </style>
+</head>
+<body class="min-h-dvh bg-neutral-900 text-white flex items-center justify-center p-6">
+  <div id="card" class="w-[680px] max-w-full rounded-[24px] p-6 md:p-8 shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_20px_40px_-10px_rgba(0,0,0,0.7)]"
+       style="background: linear-gradient(135deg, #a21caf 0%, #2b2b2b 60%, #1f2937 100%);">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+      <div class="text-2xl font-semibold tracking-wide" id="place">—</div>
+    </div>
+
+    <!-- Middle Row -->
+    <div class="mt-4 flex items-center gap-4">
+      <a id="dateLink" href="#" class="underline text-slate-200/90">—</a>
+    </div>
+
+    <div class="mt-2 flex items-center gap-4">
+      <div class="text-5xl md:text-6xl font-semibold flex items-center gap-4">
+        <span class="text-3xl">🌡️</span>
+        <span id="temp">--°C</span>
+        <img id="icon" alt="" class="h-10 w-10 object-contain" />
+      </div>
+    </div>
+
+    <!-- Footer Metrics -->
+    <div class="mt-8 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+      <div>
+        <div class="text-xs tracking-widest text-slate-300/80 font-semibold">HUMIDITY</div>
+        <div id="humidity" class="mt-1 text-xl">—</div>
+      </div>
+      <div>
+        <div class="text-xs tracking-widest text-slate-300/80 font-semibold">VISIBILITY</div>
+        <div id="visibility" class="mt-1 text-xl">—</div>
+      </div>
+      <div>
+        <div class="text-xs tracking-widest text-slate-300/80 font-semibold">AIR PRESSURE</div>
+        <div id="pressure" class="mt-1 text-xl">—</div>
+      </div>
+      <div>
+        <div class="text-xs tracking-widest text-slate-300/80 font-semibold">WIND</div>
+        <div id="wind" class="mt-1 text-xl">—</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ---- Config
+    const LAT = 40.9882728;
+    const LON = 29.0343543;
+    const API_KEY = 'bd5e378503939ddaee76f12ad7a97608';
+    const ENDPOINT = `https://api.openweathermap.org/data/2.5/weather?lat=${LAT}&lon=${LON}&appid=${API_KEY}&units=metric`;
+
+    // ---- Helpers
+    function fmtDate(date = new Date()) {
+      const dayMap = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      const monMap = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return `${monMap[date.getMonth()]} ${String(date.getDate()).padStart(2,'0')},  ${dayMap[date.getDay()]}`;
+    }
+    function msToMph(ms){ return (ms * 2.236936).toFixed(0); }
+
+    async function load() {
+      try {
+        const res = await fetch(ENDPOINT);
+        if (!res.ok) throw new Error('API error');
+        const data = await res.json();
+
+        // Header – Place
+        const place = document.getElementById('place');
+        place.textContent = `${data.name || 'Location'}\u{1F4CD}`; // 📍
+
+        // Date link
+        const dateLink = document.getElementById('dateLink');
+        dateLink.textContent = fmtDate(new Date());
+
+        // Temperature & Icon
+        document.getElementById('temp').textContent = `${Math.round(data.main.temp)}°C`;
+        const iconCode = data.weather?.[0]?.icon;
+        const icon = document.getElementById('icon');
+        icon.src = iconCode ? `https://openweathermap.org/img/wn/${iconCode}.png` : '';
+        icon.alt = data.weather?.[0]?.description || '';
+
+        // Metrics
+        document.getElementById('humidity').textContent = `${data.main.humidity}%`;
+        const visKm = Math.round((data.visibility ?? 0) / 1000);
+        document.getElementById('visibility').textContent = `${visKm}km`;
+        document.getElementById('pressure').textContent = `${data.main.pressure}hPa`;
+        document.getElementById('wind').textContent = `${msToMph(data.wind.speed)}mph`;
+      } catch (e) {
+        console.error(e);
+        document.getElementById('temp').textContent = '—';
+      }
+    }
+
+    load();
+  </script>
+</body>
+</html>
